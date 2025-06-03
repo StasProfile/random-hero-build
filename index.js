@@ -13,6 +13,44 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const HEROES_URL = 'https://api.opendota.com/api/heroes';
 const ITEMS_URL = 'https://api.opendota.com/api/constants/items';
 
+// List of unavailable items in the current Dota version
+const UNAVAILABLE_ITEMS = [
+  'wraith_pact',
+  'helm_of_the_overlord',
+  'trident',  // Kaya + Sange + Yasha combo
+  'vampire_fangs',
+  'helm_of_the_undying',
+  'third_eye',
+  'royal_jelly',
+  'witless_shako',
+  'princes_knife',
+  'repair_kit',
+  'greater_faerie_fire',
+  'minotaur_horn',
+  'poor_mans_shield',
+  'iron_talon',
+  'ring_of_aquila',
+  'arcane_ring',
+  'imp_claw',
+  'ballista',
+  'woodland_striders',
+  'mind_breaker',
+  'orb_of_destruction',
+  'titan_sliver',
+  'stormcrafter',
+  'penta_edged_sword',
+  'elven_tunic'
+];
+
+// List of heroes to exclude from random selection
+const EXCLUDED_HEROES = [
+  'npc_dota_hero_broodmother',  // Broodmother
+  'npc_dota_hero_meepo',        // Meepo
+  'npc_dota_hero_chen',         // Chen
+  'npc_dota_hero_visage',       // Visage
+  'npc_dota_hero_arc_warden'    // Arc Warden
+];
+
 // Function to get random elements from array
 const getRandomElements = (array, count) => {
   const shuffled = [...array].sort(() => 0.5 - Math.random());
@@ -33,8 +71,8 @@ bot.onText(/\/random/, async (msg) => {
       axios.get(ITEMS_URL)
     ]);
 
-    // Get heroes data
-    const heroes = heroesResponse.data;
+    // Get heroes data and filter out excluded heroes
+    const heroes = heroesResponse.data.filter(hero => !EXCLUDED_HEROES.includes(hero.name));
     const randomHeroes = getRandomElements(heroes, 3);
     
     let heroesMessage = '🎮 *3 Random Heroes:*\n';
@@ -42,14 +80,17 @@ bot.onText(/\/random/, async (msg) => {
       heroesMessage += `- ${hero.localized_name} (${hero.primary_attr})\n`;
     });
 
-    // Get items data and filter by cost
-    const items = Object.values(itemsResponse.data)
-      .filter(item => 
+    // Get items data and filter by cost and availability
+    const items = Object.entries(itemsResponse.data)
+      .filter(([itemKey, item]) => 
         // Filter only purchasable items that cost more than 2500 gold
+        // and are currently available in the game
         item.cost > 2500 && 
         !item.recipe && 
-        item.cost !== 0
-      );
+        item.cost !== 0 &&
+        !UNAVAILABLE_ITEMS.includes(itemKey)
+      )
+      .map(([_, item]) => item);
     
     const randomItems = getRandomElements(items, 6);
     
