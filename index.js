@@ -39,7 +39,26 @@ const UNAVAILABLE_ITEMS = [
   'titan_sliver',
   'stormcrafter',
   'penta_edged_sword',
-  'elven_tunic'
+  'elven_tunic',
+  'necronomicon',  // Removed Necronomicon item
+  'undefined',     // Remove undefined item
+  // Basic components to exclude
+  'sacred_relic',  // Sacred Relic
+  'mystic_staff',  // Mystic Staff
+  'reaver',        // Reaver
+  'eaglesong',     // Eaglesong
+  'ultimate_orb',  // Ultimate Orb
+  'soul_booster'   // Soul Booster
+];
+
+// Component items to filter out (typically not purchased as final items)
+const COMPONENT_ITEM_NAMES = [
+  'relic', 'eaglesong', 'reaver', 'mystic_staff', 'hyperstone',
+  'void_stone', 'platemail', 'talisman_of_evasion', 'staff_of_wizardry',
+  'claymore', 'blade_of_alacrity', 'ogre_axe', 'mithril_hammer',
+  'ultimate_orb', 'demon_edge', 'broadsword', 'quarterstaff',
+  'javelin', 'ring_of_health', 'void_stone', 'vitality_booster',
+  'energy_booster', 'point_booster', 'vitality_booster', 'oblivion_staff'
 ];
 
 // List of heroes to exclude from random selection
@@ -81,18 +100,50 @@ bot.onText(/\/random/, async (msg) => {
     });
 
     // Get items data and filter by cost and availability
-    const items = Object.entries(itemsResponse.data)
-      .filter(([itemKey, item]) => 
+    const filteredItemEntries = Object.entries(itemsResponse.data)
+      .filter(([itemKey, item]) => {
         // Filter only purchasable items that cost more than 2500 gold
         // and are currently available in the game
-        item.cost > 2500 && 
-        !item.recipe && 
-        item.cost !== 0 &&
-        !UNAVAILABLE_ITEMS.includes(itemKey)
-      )
-      .map(([_, item]) => item);
+        // and are not component items
+        const isExpensive = item.cost > 2500;
+        const isPurchasable = !item.recipe && item.cost !== 0;
+        const isAvailable = !UNAVAILABLE_ITEMS.includes(itemKey);
+        
+        // Check if the item is a component item (used to build other items)
+        const isComponentItem = COMPONENT_ITEM_NAMES.some(component => 
+          itemKey.includes(component));
+        
+        // Check if it's a Dagon (to handle later for duplicates)
+        const isDagon = itemKey.includes('dagon');
+        
+        // Keep only expensive, purchasable, available, non-component items
+        return isExpensive && isPurchasable && isAvailable && !isComponentItem;
+      });
+
+    // Convert the filtered entries back to array of items
+    const filteredItems = filteredItemEntries.map(([_, item]) => item);
     
-    const randomItems = getRandomElements(items, 6);
+    // Select random items and ensure no duplicate Dagons
+    const randomItems = [];
+    const selectedItems = getRandomElements(filteredItems, 12); // Get more than needed to handle duplicates
+    let dagonSelected = false;
+    
+    // Add items while ensuring no duplicate Dagons
+    for (const item of selectedItems) {
+      // If we already have 6 items, stop
+      if (randomItems.length >= 6) break;
+      
+      // Check if this is a Dagon
+      const isDagon = item.dname?.toLowerCase().includes('dagon') || 
+                     item.localized_name?.toLowerCase().includes('dagon');
+      
+      // If this is a Dagon and we already have one, skip it
+      if (isDagon && dagonSelected) continue;
+      
+      // Otherwise add the item, and if it's a Dagon, mark that we've selected one
+      randomItems.push(item);
+      if (isDagon) dagonSelected = true;
+    }
     
     let itemsMessage = '\n💰 *6 Random Items (cost > 2500):*\n';
     randomItems.forEach(item => {
