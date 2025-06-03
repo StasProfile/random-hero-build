@@ -41,7 +41,11 @@ const UNAVAILABLE_ITEMS = [
   'penta_edged_sword',
   'elven_tunic',
   'necronomicon',  // Removed Necronomicon item
+  'necronomicon_1',  // Different level versions of Necronomicon
+  'necronomicon_2',
+  'necronomicon_3',
   'undefined',     // Remove undefined item
+  'aghanims_blessing_roshan', // Aghanim's Blessing from Roshan
   // Basic components to exclude
   'sacred_relic',  // Sacred Relic
   'mystic_staff',  // Mystic Staff
@@ -133,12 +137,20 @@ bot.onText(/\/random/, async (msg) => {
       // If we already have 6 items, stop
       if (randomItems.length >= 6) break;
       
+      // Skip items with undefined names
+      if (!item.dname && !item.localized_name) continue;
+      
       // Check if this is a Dagon
       const isDagon = item.dname?.toLowerCase().includes('dagon') || 
                      item.localized_name?.toLowerCase().includes('dagon');
       
-      // If this is a Dagon and we already have one, skip it
-      if (isDagon && dagonSelected) continue;
+      // Check if this is a necronomicon (additional check)
+      const isNecronomicon = 
+        item.dname?.toLowerCase().includes('necronomicon') || 
+        item.localized_name?.toLowerCase().includes('necronomicon');
+      
+      // If this is a Dagon and we already have one, or if it's a Necronomicon, skip it
+      if ((isDagon && dagonSelected) || isNecronomicon) continue;
       
       // Otherwise add the item, and if it's a Dagon, mark that we've selected one
       randomItems.push(item);
