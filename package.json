@@ -1,18 +1,27 @@
 {
-  "name": "dota-random-hero",
+  "name": "random-hero-build",
   "version": "1.0.0",
-  "description": "",
+  "description": "Telegram bot for generating random Dota 2 hero builds",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "lint": "eslint .",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.9.0",
-    "dotenv": "^16.5.0",
-    "node-cron": "^4.1.0",
-    "node-telegram-bot-api": "^0.66.0"
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "node-cron": "^3.0.3",
+    "node-telegram-bot-api": "^0.64.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1"
   }
 }
